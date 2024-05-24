@@ -186,6 +186,7 @@ const getAllDonors = async (
       id: true,
       name: true,
       email: true,
+      role: true,
       bloodType: true,
       location: true,
       availability: true,

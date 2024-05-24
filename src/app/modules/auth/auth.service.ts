@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import config from "../../../config";
 import ApiError from "../../errors/ApiError";
 import httpStatus from "http-status";
+import { UserStatus } from "@prisma/client";
 
 const loginUserIntoDB = async (payload: {
   email: string;
@@ -58,6 +59,40 @@ const loginUserIntoDB = async (payload: {
   };
 };
 
+const refreshToken = async (refreshToken: string) => {
+  // Decoded the refresh token and verity
+  let decodedData;
+  try {
+    decodedData = jwtHelpers.verifyToken(
+      refreshToken,
+      config.JWT_REFRESH_SECRET as Secret
+    );
+  } catch (error) {
+    throw new Error("You are not authorized!");
+  }
+
+  // Check if the user is available in database or not
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: decodedData?.email,
+      activeStatus: UserStatus.ACTIVATE,
+    },
+  });
+
+  // if refresh token is verify and user is exist in database then create access token again
+  const tokenData = { email: userData.email, role: userData.role };
+  const accessToken = jwtHelpers.generateToken(
+    tokenData,
+    config.JWT_ACCESS_SECRET as Secret,
+    config.JWT_ACCESS_TOKEN_EXPIRES_IN as string
+  );
+
+  return {
+    accessToken,
+  };
+};
+
 export const AuthServices = {
   loginUserIntoDB,
+  refreshToken,
 };

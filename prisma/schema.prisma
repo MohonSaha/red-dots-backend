@@ -80,7 +80,7 @@ enum requestStatus {
 }
 
 enum UserRole {
-USER
+  USER
   ADMIN
 }
 

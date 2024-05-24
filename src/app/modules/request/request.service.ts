@@ -53,14 +53,6 @@ const requestDonorForBloodIntoDB = async (token: string, payload: any) => {
   //   );
   // }
 
-  // // check if the user can not request himself
-  // if (payload?.donorId === requesterData.id) {
-  //   throw new ApiError(
-  //     httpStatus.NOT_FOUND,
-  //     "Wrong request. You can not request yourself.."
-  //   );
-  // }
-
   const RequestInfo = {
     donorId: payload?.donorId,
     requesterId: requesterData?.id,
