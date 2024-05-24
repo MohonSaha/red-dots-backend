@@ -36,7 +36,7 @@ const loginUserIntoDB = async (payload: {
 
   // Create access token
 
-  const tokenData = { email: userData.email };
+  const tokenData = { email: userData.email, role: userData.role };
 
   const accessToken = jwtHelpers.generateToken(
     tokenData,

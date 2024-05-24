@@ -75,10 +75,23 @@ const getByIdFromDB = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateUserInfo = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await UserServices.updateUserInfoIntoDB(id, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Users profile updated successfully!",
+    data: result,
+  });
+});
+
 export const UserControllers = {
   createUser,
   getMyProfile,
   updateMyProfile,
   getAllDonors,
   getByIdFromDB,
+  updateUserInfo,
 };

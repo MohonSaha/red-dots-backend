@@ -5,7 +5,7 @@ import config from "../../../config";
 import { Secret } from "jsonwebtoken";
 import ApiError from "../../errors/ApiError";
 import httpStatus from "http-status";
-import { Prisma, User, UserRole } from "@prisma/client";
+import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
 import { IDonorFilterRequest } from "./user.interface";
 import { IPaginationOptions } from "../../interfaces/pagination";
 import { paginationHelper } from "../../../helpers/paginationHelper";
@@ -262,10 +262,31 @@ const getByIdFromDB = async (id: string) => {
   return result;
 };
 
+const updateUserInfoIntoDB = async (
+  id: string,
+  updateData: { role?: UserRole; activeStatus?: UserStatus }
+) => {
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      id,
+    },
+  });
+
+  const updateUserStatus = await prisma.user.update({
+    where: {
+      id,
+    },
+    data: updateData,
+  });
+
+  return updateUserStatus;
+};
+
 export const UserServices = {
   createUserIntoDB,
   getMyProfileFromDB,
   updateMyProfileIntoDB,
   getAllDonors,
   getByIdFromDB,
+  updateUserInfoIntoDB,
 };
