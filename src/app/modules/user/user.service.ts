@@ -5,7 +5,7 @@ import config from "../../../config";
 import { Secret } from "jsonwebtoken";
 import ApiError from "../../errors/ApiError";
 import httpStatus from "http-status";
-import { Prisma, User } from "@prisma/client";
+import { Prisma, User, UserRole } from "@prisma/client";
 import { IDonorFilterRequest } from "./user.interface";
 import { IPaginationOptions } from "../../interfaces/pagination";
 import { paginationHelper } from "../../../helpers/paginationHelper";
@@ -25,6 +25,7 @@ const createUserIntoDB = async (data: any) => {
   const userData = {
     name: data.name,
     email: data.email,
+    role: UserRole.USER,
     password: hashedPassword,
     bloodType: data.bloodType,
     location: data.location,

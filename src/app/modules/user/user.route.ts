@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.post(
   "/register",
-  validateRequest(userValidations.userRegisterValidationSchema),
+  // validateRequest(userValidations.userRegisterValidationSchema),
   UserControllers.createUser
 );
 
