@@ -6,7 +6,10 @@ import globalErrorHanlder from "./app/middlewares/globalErrorHanlder";
 import cookieParser from "cookie-parser";
 
 const app: Application = express();
-app.use(cors());
+// app.use(cors());
+
+// setting for enable refresh token functionality
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(cookieParser());
 
 // parser : help to receive json data

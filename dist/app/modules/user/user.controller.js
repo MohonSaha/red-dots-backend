@@ -66,9 +66,31 @@ const getAllDonors = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
         data: result.data,
     });
 }));
+const getByIdFromDB = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const result = yield user_service_1.UserServices.getByIdFromDB(id);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "User retrive successfully",
+        data: result,
+    });
+}));
+const updateUserInfo = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const result = yield user_service_1.UserServices.updateUserInfoIntoDB(id, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Users profile updated successfully!",
+        data: result,
+    });
+}));
 exports.UserControllers = {
     createUser,
     getMyProfile,
     updateMyProfile,
     getAllDonors,
+    getByIdFromDB,
+    updateUserInfo,
 };

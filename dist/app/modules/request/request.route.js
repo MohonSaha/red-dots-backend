@@ -14,5 +14,6 @@ const router = express_1.default.Router();
  */
 router.post("/donation-request", request_controller_1.RequestControllers.requestDonorForBlood);
 router.get("/donation-request", request_controller_1.RequestControllers.getMyDonationRequest);
+router.get("/donation-request-by-me", request_controller_1.RequestControllers.getDonationRequestByMe);
 router.put("/donation-request/:requestId", request_controller_1.RequestControllers.updateRequestStatus);
 exports.RequestRoutes = router;

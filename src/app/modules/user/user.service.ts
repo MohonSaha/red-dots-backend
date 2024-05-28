@@ -29,6 +29,7 @@ const createUserIntoDB = async (data: any) => {
     password: hashedPassword,
     bloodType: data.bloodType,
     location: data.location,
+    availability: data.availability,
   };
 
   const result = await prisma.$transaction(async (transactionClient) => {
@@ -92,6 +93,12 @@ const getMyProfileFromDB = async (token: string) => {
           bio: true,
           age: true,
           lastDonationDate: true,
+          height: true,
+          weight: true,
+          gender: true,
+          hasAllergies: true,
+          hasDiabetes: true,
+          phoneNumber: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -103,6 +110,9 @@ const getMyProfileFromDB = async (token: string) => {
 };
 
 const updateMyProfileIntoDB = async (token: string, payload: any) => {
+  const { bloodType, location, name, email, availability, ...userProfileData } =
+    payload;
+
   // Check if the token is valid or not
   const isTokenValid = jwtHelpers.verifyToken(
     token,
@@ -128,14 +138,42 @@ const updateMyProfileIntoDB = async (token: string, payload: any) => {
   }
 
   // update the user profile
-  const updatedData = await prisma.userProfile.update({
-    where: {
-      userId: userData.id,
-    },
-    data: payload,
+  // const updatedData = await prisma.userProfile.update({
+  //   where: {
+  //     userId: userData.id,
+  //   },
+  //   data: payload,
+  // });
+
+  const result = await prisma.$transaction(async (transactionClient) => {
+    const updateUserData = await transactionClient.user.update({
+      where: { id: userData.id },
+      data: { bloodType, location, name, email, availability },
+    });
+
+    const updateProfileData = await transactionClient.userProfile.upsert({
+      where: { userId: userData.id }, // Use userId for the unique condition
+      update: userProfileData, // Update if already exists
+      create: {
+        age: userProfileData.age,
+        bio: userProfileData.bio,
+        gender: userProfileData.gender,
+        hasAllergies: userProfileData.hasAllergies,
+        hasDiabetes: userProfileData.hasDiabetes,
+        height: userProfileData.height,
+        lastDonationDate: userProfileData.lastDonationDate,
+        phoneNumber: userProfileData.phoneNumber,
+        weight: userProfileData.weight,
+        user: {
+          connect: { id: userData.id }, // Connect the existing user
+        },
+      },
+    });
+
+    return updateProfileData;
   });
 
-  return updatedData;
+  return result;
 };
 
 // Get all donors
@@ -187,6 +225,7 @@ const getAllDonors = async (
       name: true,
       email: true,
       role: true,
+      activeStatus: true,
       bloodType: true,
       location: true,
       availability: true,

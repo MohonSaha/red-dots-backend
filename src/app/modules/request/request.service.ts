@@ -4,6 +4,11 @@ import { jwtHelpers } from "../../../helpers/jwtHelper";
 import ApiError from "../../errors/ApiError";
 import httpStatus from "http-status";
 import prisma from "../../../shared/prisma";
+import { IRequestFilterRequest } from "./request.interface";
+import { IPaginationOptions } from "../../interfaces/pagination";
+import { paginationHelper } from "../../../helpers/paginationHelper";
+import { Prisma } from "@prisma/client";
+import { requestSearchableFields } from "./request.constant";
 
 /*
  ** Request Donor For Blood,
@@ -117,6 +122,7 @@ const getMyDonationRequestFromDB = async (token: string) => {
       requesterId: {
         not: userData.id, // Filter where requesterId is not equal to current user's id
       },
+      // isAccepted: false,
     },
   });
 
@@ -261,9 +267,118 @@ const updateRequestStatusIntoDB = async (
   return updatedData;
 };
 
+const getAllDonationRequestFromDB = async (
+  params: IRequestFilterRequest,
+  options: IPaginationOptions
+) => {
+  const { limit, page, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+  const andConditions: Prisma.RequestWhereInput[] = [];
+
+  const { searchTerm, ...filterData } = params;
+
+  console.log(searchTerm);
+  if (searchTerm) {
+    andConditions.push({
+      OR: [
+        { phoneNumber: { contains: searchTerm, mode: "insensitive" } },
+        { hospitalName: { contains: searchTerm, mode: "insensitive" } },
+        { hospitalAddress: { contains: searchTerm, mode: "insensitive" } },
+        { reason: { contains: searchTerm, mode: "insensitive" } },
+        { donor: { name: { contains: searchTerm, mode: "insensitive" } } },
+        { donor: { email: { contains: searchTerm, mode: "insensitive" } } },
+        { donor: { bloodType: { contains: searchTerm, mode: "insensitive" } } },
+        { donor: { location: { contains: searchTerm, mode: "insensitive" } } },
+      ],
+    });
+  }
+
+  //   Implementing Filtering On Specific Fields And Values
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.RequestWhereInput = { AND: andConditions };
+
+  // Step 1: Fetch all donation requests
+  const requests = await prisma.request.findMany({
+    where: whereConditions,
+    include: {
+      donor: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bloodType: true,
+          location: true,
+          availability: true,
+          activeStatus: true,
+          isDeleted: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+    },
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? {
+            [sortBy]: sortOrder,
+          }
+        : { createdAt: "desc" },
+  });
+
+  // Step 2: Fetch requesters based on requesterId from the user table without the password field
+  const requestsWithRequesters = await Promise.all(
+    requests.map(async (request) => {
+      const requester = await prisma.user.findUnique({
+        where: { id: request.requesterId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bloodType: true,
+          location: true,
+          availability: true,
+          activeStatus: true,
+          isDeleted: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      return {
+        ...request,
+        requester,
+      };
+    })
+  );
+
+  // Fetch the total count of matching records for pagination
+  const total = await prisma.request.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: requestsWithRequesters,
+  };
+};
+
 export const RequestServices = {
   requestDonorForBloodIntoDB,
   getMyDonationRequestFromDB,
   updateRequestStatusIntoDB,
   getDonationRequestByMe,
+  getAllDonationRequestFromDB,
 };

@@ -29,7 +29,7 @@ const loginUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
         id: result.userData.id,
         name: result.userData.name,
         email: result.userData.email,
-        token: result.accessToken,
+        accessToken: result.accessToken,
     };
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
@@ -38,6 +38,27 @@ const loginUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
         data: responseData,
     });
 }));
+const refreshToken = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { refreshToken } = req.cookies;
+    const result = yield auth_service_1.AuthServices.refreshToken(refreshToken);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Access token generated successfully",
+        data: result,
+    });
+}));
+const changePassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield auth_service_1.AuthServices.changePassword(req.user, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Password changed successfully!",
+        data: Object.assign(Object.assign({}, result), { statusCode: http_status_1.default.OK }),
+    });
+}));
 exports.AuthControllers = {
     loginUser,
+    refreshToken,
+    changePassword,
 };

@@ -30,7 +30,31 @@ model User {
   userProfile UserProfile?
   request     Request[]
 
+  // bloodPost BloodPost[]
+  donorPosts     BloodPost[] @relation("DonorRequests")
+  requesterPosts BloodPost[] @relation("RequesterRequests")
+
   @@map("users")
+}
+
+model UserProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  bio              String?
+  age              Int      @default(0)
+  lastDonationDate String
+  gender           Gender?
+  hasAllergies     Boolean? @default(false)
+  hasDiabetes      Boolean? @default(false)
+  height           Int      @default(0)
+  weight           Int      @default(0)
+  phoneNumber      Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("userProfiles")
 }
 
 model Request {
@@ -43,6 +67,7 @@ model Request {
   hospitalAddress        String
   reason                 String
   requestStatus          requestStatus @default(PENDING)
+  isAccepted             Boolean?      @default(false)
   alternativePhoneNumber String?
   timeOfDonation         String?
 
@@ -54,23 +79,28 @@ model Request {
   @@map("requests")
 }
 
-model UserProfile {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  bio              String?
-  age              Int
-  lastDonationDate String
-  gender           Gender?
-  hasAllergies     Boolean? @default(false)
-  hasDiabetes      Boolean? @default(false)
-  height           String?
-  weight           String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+model BloodPost {
+  id                     String        @id @default(uuid())
+  requesterId            String
+  donorId                String
+  numberOfBags           Int           @default(0)
+  phoneNumber            String
+  dateOfDonation         String
+  hospitalName           String
+  hospitalLocation       String
+  hospitalAddress        String
+  reason                 String
+  requestStatus          requestStatus @default(PENDING)
+  isManaged             Boolean?      @default(false)
+  alternativePhoneNumber String?
+  timeOfDonation         String?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  donor     User @relation("DonorRequests", fields: [donorId], references: [id])
+  requester User @relation("RequesterRequests", fields: [requesterId], references: [id])
 
-  @@map("userProfiles")
+  @@map("bloodPosts")
 }
 
 enum requestStatus {

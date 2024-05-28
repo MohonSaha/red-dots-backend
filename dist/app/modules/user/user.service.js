@@ -30,6 +30,7 @@ const jwtHelper_1 = require("../../../helpers/jwtHelper");
 const config_1 = __importDefault(require("../../../config"));
 const ApiError_1 = __importDefault(require("../../errors/ApiError"));
 const http_status_1 = __importDefault(require("http-status"));
+const client_1 = require("@prisma/client");
 const paginationHelper_1 = require("../../../helpers/paginationHelper");
 const user_constant_1 = require("./user.constant");
 const JwtError_1 = __importDefault(require("../../errors/JwtError"));
@@ -44,9 +45,11 @@ const createUserIntoDB = (data) => __awaiter(void 0, void 0, void 0, function* (
     const userData = {
         name: data.name,
         email: data.email,
+        role: client_1.UserRole.USER,
         password: hashedPassword,
         bloodType: data.bloodType,
         location: data.location,
+        availability: data.availability,
     };
     const result = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
         // Operation-1
@@ -56,7 +59,7 @@ const createUserIntoDB = (data) => __awaiter(void 0, void 0, void 0, function* (
         // Operation-2
         const createdProfileData = yield transactionClient.userProfile.create({
             data: {
-                bio: data.bio,
+                bio: data.bio || "",
                 age: data.age,
                 lastDonationDate: data.lastDonationDate,
                 userId: createdUserData.id,
@@ -96,6 +99,12 @@ const getMyProfileFromDB = (token) => __awaiter(void 0, void 0, void 0, function
                     bio: true,
                     age: true,
                     lastDonationDate: true,
+                    height: true,
+                    weight: true,
+                    gender: true,
+                    hasAllergies: true,
+                    hasDiabetes: true,
+                    phoneNumber: true,
                     createdAt: true,
                     updatedAt: true,
                 },
@@ -105,6 +114,7 @@ const getMyProfileFromDB = (token) => __awaiter(void 0, void 0, void 0, function
     return userData;
 });
 const updateMyProfileIntoDB = (token, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const { bloodType, location, name, email, availability } = payload, userProfileData = __rest(payload, ["bloodType", "location", "name", "email", "availability"]);
     // Check if the token is valid or not
     const isTokenValid = jwtHelper_1.jwtHelpers.verifyToken(token, config_1.default.JWT_ACCESS_SECRET);
     if (!isTokenValid) {
@@ -120,13 +130,38 @@ const updateMyProfileIntoDB = (token, payload) => __awaiter(void 0, void 0, void
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "User not found! Please try again..");
     }
     // update the user profile
-    const updatedData = yield prisma_1.default.userProfile.update({
-        where: {
-            userId: userData.id,
-        },
-        data: payload,
-    });
-    return updatedData;
+    // const updatedData = await prisma.userProfile.update({
+    //   where: {
+    //     userId: userData.id,
+    //   },
+    //   data: payload,
+    // });
+    const result = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+        const updateUserData = yield transactionClient.user.update({
+            where: { id: userData.id },
+            data: { bloodType, location, name, email, availability },
+        });
+        const updateProfileData = yield transactionClient.userProfile.upsert({
+            where: { userId: userData.id }, // Use userId for the unique condition
+            update: userProfileData, // Update if already exists
+            create: {
+                age: userProfileData.age,
+                bio: userProfileData.bio,
+                gender: userProfileData.gender,
+                hasAllergies: userProfileData.hasAllergies,
+                hasDiabetes: userProfileData.hasDiabetes,
+                height: userProfileData.height,
+                lastDonationDate: userProfileData.lastDonationDate,
+                phoneNumber: userProfileData.phoneNumber,
+                weight: userProfileData.weight,
+                user: {
+                    connect: { id: userData.id }, // Connect the existing user
+                },
+            },
+        });
+        return updateProfileData;
+    }));
+    return result;
 });
 // Get all donors
 const getAllDonors = (params, options) => __awaiter(void 0, void 0, void 0, function* () {
@@ -166,6 +201,8 @@ const getAllDonors = (params, options) => __awaiter(void 0, void 0, void 0, func
             id: true,
             name: true,
             email: true,
+            role: true,
+            activeStatus: true,
             bloodType: true,
             location: true,
             availability: true,
@@ -207,9 +244,55 @@ const getAllDonors = (params, options) => __awaiter(void 0, void 0, void 0, func
         data: result,
     };
 });
+const getByIdFromDB = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield prisma_1.default.user.findUnique({
+        where: {
+            id,
+            // isDeleted: false,
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            bloodType: true,
+            location: true,
+            availability: true,
+            createdAt: true,
+            updatedAt: true,
+            userProfile: {
+                select: {
+                    id: true,
+                    userId: true,
+                    bio: true,
+                    age: true,
+                    lastDonationDate: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            },
+        },
+    });
+    return result;
+});
+const updateUserInfoIntoDB = (id, updateData) => __awaiter(void 0, void 0, void 0, function* () {
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            id,
+        },
+    });
+    const updateUserStatus = yield prisma_1.default.user.update({
+        where: {
+            id,
+        },
+        data: updateData,
+    });
+    return updateUserStatus;
+});
 exports.UserServices = {
     createUserIntoDB,
     getMyProfileFromDB,
     updateMyProfileIntoDB,
     getAllDonors,
+    getByIdFromDB,
+    updateUserInfoIntoDB,
 };

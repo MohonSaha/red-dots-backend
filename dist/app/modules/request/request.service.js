@@ -31,7 +31,7 @@ const requestDonorForBloodIntoDB = (token, payload) => __awaiter(void 0, void 0,
         throw new ApiError_1.default(http_status_1.default.FORBIDDEN, "FORBIDDEN");
     }
     // Check if the requester is available in database: check if the requesterId is valid
-    const requesterData = yield prisma_1.default.user.findUnique({
+    const requesterData = yield prisma_1.default.user.findUniqueOrThrow({
         where: {
             email: isTokenValid.email,
         },
@@ -40,20 +40,19 @@ const requestDonorForBloodIntoDB = (token, payload) => __awaiter(void 0, void 0,
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "User not found! Please try again..");
     }
     // Check if the donor is available in database: check if the donorId is valid
-    const donorData = yield prisma_1.default.user.findUnique({
-        where: {
-            id: payload.donorId,
-        },
-    });
-    if (!donorData) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "Donor not found! Please try with valid donor id..");
-    }
-    // check if the user can not request himself
-    if ((payload === null || payload === void 0 ? void 0 : payload.donorId) === requesterData.id) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "Wrong request. You can not request yourself..");
-    }
+    // const donorData = await prisma.user.findUniqueOrThrow({
+    //   where: {
+    //     id: payload.donorId,
+    //   },
+    // });
+    // if (!donorData) {
+    //   throw new ApiError(
+    //     httpStatus.NOT_FOUND,
+    //     "Donor not found! Please try with valid donor id.."
+    //   );
+    // }
     const RequestInfo = {
-        donorId: donorData === null || donorData === void 0 ? void 0 : donorData.id,
+        donorId: payload === null || payload === void 0 ? void 0 : payload.donorId,
         requesterId: requesterData === null || requesterData === void 0 ? void 0 : requesterData.id,
         phoneNumber,
         dateOfDonation,
@@ -131,6 +130,55 @@ const getMyDonationRequestFromDB = (token) => __awaiter(void 0, void 0, void 0, 
     });
     return resultWithRequester;
 });
+const getDonationRequestByMe = (token) => __awaiter(void 0, void 0, void 0, function* () {
+    // Check if the token is valid or not
+    const isTokenValid = jwtHelper_1.jwtHelpers.verifyToken(token, config_1.default.JWT_ACCESS_SECRET);
+    if (!isTokenValid) {
+        throw new ApiError_1.default(http_status_1.default.FORBIDDEN, "FORBIDDEN");
+    }
+    // Check if the user is available in database
+    const userData = yield prisma_1.default.user.findUnique({
+        where: {
+            email: isTokenValid.email,
+        },
+    });
+    if (!userData) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "User not found! Please try again..");
+    }
+    const result = yield prisma_1.default.request.findMany({
+        where: {
+            requesterId: userData.id, // Filter by requesterId equal to current user's id
+            donorId: {
+                not: userData.id, // Filter where donorId is not equal to current user's id
+            },
+        },
+    });
+    // Fetch donor data separately
+    const donorIds = result.map((request) => request.donorId);
+    const donorData = yield prisma_1.default.user.findMany({
+        where: {
+            id: {
+                in: donorIds,
+            },
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            bloodType: true,
+            location: true,
+            availability: true,
+            createdAt: true,
+            updatedAt: true,
+        },
+    });
+    // Merge donor data with the result
+    const resultWithDonor = result.map((request) => {
+        const donor = donorData.find((user) => user.id === request.donorId);
+        return Object.assign(Object.assign({}, request), { donor });
+    });
+    return resultWithDonor;
+});
 // Update Request Application Status
 const updateRequestStatusIntoDB = (token, requestId, payload) => __awaiter(void 0, void 0, void 0, function* () {
     // Check if the token is valid or not
@@ -160,4 +208,5 @@ exports.RequestServices = {
     requestDonorForBloodIntoDB,
     getMyDonationRequestFromDB,
     updateRequestStatusIntoDB,
+    getDonationRequestByMe,
 };

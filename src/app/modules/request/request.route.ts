@@ -7,6 +7,7 @@ const router = express.Router();
  ** Request Donor For Blood,
  ** Get My Donation Request,
  ** Update Request Status ,
+ ** Get single donation Request,
  */
 
 router.post("/donation-request", RequestControllers.requestDonorForBlood);
@@ -18,9 +19,14 @@ router.get(
   RequestControllers.getDonationRequestByMe
 );
 
-router.put(
+router.patch(
   "/donation-request/:requestId",
   RequestControllers.updateRequestStatus
+);
+
+router.get(
+  "/all-donation-requests",
+  RequestControllers.getAllDonationRequestFromDB
 );
 
 export const RequestRoutes = router;

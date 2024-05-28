@@ -19,6 +19,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const config_1 = __importDefault(require("../../../config"));
 const ApiError_1 = __importDefault(require("../../errors/ApiError"));
 const http_status_1 = __importDefault(require("http-status"));
+const client_1 = require("@prisma/client");
 const loginUserIntoDB = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     // check: if the user available
     const userData = yield prisma_1.default.user.findUnique({
@@ -35,7 +36,7 @@ const loginUserIntoDB = (payload) => __awaiter(void 0, void 0, void 0, function*
         throw new Error("Password incorrect! Please try again..");
     }
     // Create access token
-    const tokenData = { email: userData.email };
+    const tokenData = { email: userData.email, role: userData.role };
     const accessToken = jwtHelper_1.jwtHelpers.generateToken(tokenData, config_1.default.JWT_ACCESS_SECRET, config_1.default.JWT_ACCESS_TOKEN_EXPIRES_IN);
     // Create refresh token
     const refreshToken = jwtHelper_1.jwtHelpers.generateToken(tokenData, config_1.default.JWT_REFRESH_SECRET, config_1.default.JWT_REFRESH_TOKEN_EXPIRES_IN);
@@ -45,6 +46,60 @@ const loginUserIntoDB = (payload) => __awaiter(void 0, void 0, void 0, function*
         refreshToken,
     };
 });
+const refreshToken = (refreshToken) => __awaiter(void 0, void 0, void 0, function* () {
+    // Decoded the refresh token and verity
+    let decodedData;
+    try {
+        decodedData = jwtHelper_1.jwtHelpers.verifyToken(refreshToken, config_1.default.JWT_REFRESH_SECRET);
+    }
+    catch (error) {
+        throw new Error("You are not authorized!");
+    }
+    // Check if the user is available in database or not
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: decodedData === null || decodedData === void 0 ? void 0 : decodedData.email,
+            activeStatus: client_1.UserStatus.ACTIVATE,
+        },
+    });
+    // if refresh token is verify and user is exist in database then create access token again
+    const tokenData = { email: userData.email, role: userData.role };
+    const accessToken = jwtHelper_1.jwtHelpers.generateToken(tokenData, config_1.default.JWT_ACCESS_SECRET, config_1.default.JWT_ACCESS_TOKEN_EXPIRES_IN);
+    return {
+        accessToken,
+    };
+});
+const changePassword = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    // Check if the user is available in database
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: user.email,
+            activeStatus: client_1.UserStatus.ACTIVATE,
+        },
+    });
+    // check: if the old(current) password is correct
+    const isCorrectPassword = yield bcrypt_1.default.compare(payload.oldPassword, userData.password);
+    if (!isCorrectPassword) {
+        throw new Error("Password incorrect!");
+    }
+    // hash the password
+    const hashedPassword = yield bcrypt_1.default.hash(payload.newPassword, 12);
+    // update the new password
+    yield prisma_1.default.user.update({
+        where: {
+            email: userData.email,
+            activeStatus: client_1.UserStatus.ACTIVATE,
+        },
+        data: {
+            password: hashedPassword,
+        },
+    });
+    return {
+        message: "Password changed successfully!",
+    };
+});
 exports.AuthServices = {
     loginUserIntoDB,
+    refreshToken,
+    changePassword,
 };
