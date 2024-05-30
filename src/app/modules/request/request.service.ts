@@ -277,7 +277,7 @@ const getAllDonationRequestFromDB = async (
 
   const { searchTerm, ...filterData } = params;
 
-  console.log(searchTerm);
+  // console.log(searchTerm);
   if (searchTerm) {
     andConditions.push({
       OR: [
