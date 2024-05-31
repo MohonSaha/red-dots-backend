@@ -71,10 +71,24 @@ const deleteAcceptedPost = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyAcceptedPost = catchAsync(async (req: Request, res: Response) => {
+  const token = req.headers.authorization || "";
+
+  const result = await PostServices.getMyAccpetedPostFromDB(token);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "My accepted post retrived successfully!",
+    data: result,
+  });
+});
+
 export const PostControllers = {
   createPostForBlood,
   getAllBloodPost,
   acceptPostByDonor,
   deleteAcceptedPost,
   getSingleBloodPost,
+  getMyAcceptedPost,
 };
