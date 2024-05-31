@@ -377,6 +377,74 @@ const getMyAccpetedPostFromDB = async (token: string) => {
   return result;
 };
 
+const getMyPostsFromDB = async (token: string) => {
+  // Check if the token is valid or not
+  const isTokenValid = jwtHelpers.verifyToken(
+    token,
+    config.JWT_ACCESS_SECRET as Secret
+  );
+
+  if (!isTokenValid) {
+    throw new ApiError(httpStatus.FORBIDDEN, "FORBIDDEN");
+  }
+
+  // Check if the user is available in database
+  const userData = await prisma.user.findUnique({
+    where: {
+      email: isTokenValid.email,
+    },
+  });
+
+  if (!userData) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "User not found! Please try again.."
+    );
+  }
+
+  const result = await prisma.bloodPost.findMany({
+    where: {
+      requesterId: userData.id,
+    },
+    include: {
+      requester: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bloodType: true,
+          location: true,
+          availability: true,
+          activeStatus: true,
+          isDeleted: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      acceptedDonors: {
+        include: {
+          donor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              bloodType: true,
+              location: true,
+              availability: true,
+              activeStatus: true,
+              isDeleted: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return result;
+};
+
 export const PostServices = {
   createPostForBlood,
   getAllBloodPostFromDB,
@@ -384,4 +452,5 @@ export const PostServices = {
   deleteAcceptedPostFormDB,
   getSingleBloodPostFromDB,
   getMyAccpetedPostFromDB,
+  getMyPostsFromDB,
 };

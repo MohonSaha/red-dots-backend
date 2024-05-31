@@ -22,4 +22,6 @@ router.delete(
 
 router.get("/my-accepted-post", PostControllers.getMyAcceptedPost);
 
+router.get("/my-posts", PostControllers.getMyPosts);
+
 export const PostRoutes = router;
