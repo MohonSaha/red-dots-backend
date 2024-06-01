@@ -10,6 +10,16 @@ import { paginationHelper } from "../../../helpers/paginationHelper";
 import { Prisma } from "@prisma/client";
 import { postSearchableFields } from "./bloodPost.constant";
 
+/*
+ ** Create a blood post
+ ** Get all blood post from db
+ ** Accept blood post by donor
+ ** Delete accepted blood post
+ ** Get single blood post
+ ** Get my accepted post (Me => Donor)
+ ** Get my posts (Me => Requester)
+ */
+
 const createPostForBlood = async (token: string, payload: any) => {
   const {
     numberOfBags,
@@ -106,10 +116,36 @@ const getAllBloodPostFromDB = async (
   const posts = await prisma.bloodPost.findMany({
     where: whereConditions,
     include: {
-      requester: true,
+      requester: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bloodType: true,
+          location: true,
+          availability: true,
+          activeStatus: true,
+          isDeleted: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
       acceptedDonors: {
         include: {
-          donor: true,
+          donor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              bloodType: true,
+              location: true,
+              availability: true,
+              activeStatus: true,
+              isDeleted: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
         },
       },
     },
@@ -287,16 +323,42 @@ const deleteAcceptedPostFormDB = async (token: string, postId: string) => {
 };
 
 const getSingleBloodPostFromDB = async (id: string) => {
-  const result = await prisma.bloodPost.findUnique({
+  const result = await prisma.bloodPost.findUniqueOrThrow({
     where: {
       id,
       isManaged: false,
     },
     include: {
-      requester: true,
+      requester: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          bloodType: true,
+          location: true,
+          availability: true,
+          activeStatus: true,
+          isDeleted: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
       acceptedDonors: {
         include: {
-          donor: true,
+          donor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              bloodType: true,
+              location: true,
+              availability: true,
+              activeStatus: true,
+              isDeleted: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
         },
       },
     },
