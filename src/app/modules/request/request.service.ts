@@ -375,10 +375,60 @@ const getAllDonationRequestFromDB = async (
   };
 };
 
+const getSingleRequestByMyFromDB = async (id: string) => {
+  const result = await prisma.request.findUnique({
+    where: {
+      id,
+    },
+  });
+  return result;
+};
+
+const deleteRequst = async (token: string, requestId: string) => {
+  // Check if the token is valid or not
+  const isTokenValid = jwtHelpers.verifyToken(
+    token,
+    config.JWT_ACCESS_SECRET as Secret
+  );
+
+  if (!isTokenValid) {
+    throw new ApiError(httpStatus.FORBIDDEN, "FORBIDDEN");
+  }
+
+  // Check if the donor is available in the database
+  const requesterData = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: isTokenValid.email,
+    },
+  });
+
+  if (!requesterData) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "User not found! Please try again.."
+    );
+  }
+
+  const deleteRequest = await prisma.request.deleteMany({
+    where: {
+      id: requestId,
+      requesterId: requesterData.id,
+    },
+  });
+
+  if (deleteRequest.count === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No request found!");
+  }
+
+  return deleteRequest;
+};
+
 export const RequestServices = {
   requestDonorForBloodIntoDB,
   getMyDonationRequestFromDB,
   updateRequestStatusIntoDB,
   getDonationRequestByMe,
   getAllDonationRequestFromDB,
+  getSingleRequestByMyFromDB,
+  deleteRequst,
 };

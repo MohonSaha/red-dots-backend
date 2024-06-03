@@ -8,8 +8,10 @@ import { requestFilterableFilds } from "./request.constant";
 
 /*
  ** Request Donor For Blood,
- ** Get My Donation Request,
- ** Update Request Status ,
+ ** Get My Received Donation Request,
+ ** Get My Created Donation Request,
+ ** Update Request Status (approved, pending),
+ ** Get all donation request (As an Admin)
  */
 
 const requestDonorForBlood = catchAsync(async (req: Request, res: Response) => {
@@ -94,10 +96,39 @@ const getAllDonationRequestFromDB = catchAsync(
   }
 );
 
+const getSingleRequestByMyFromDB = catchAsync(
+  async (req: Request, res: Response) => {
+    const { requestId } = req.params;
+    const result = await RequestServices.getSingleRequestByMyFromDB(requestId);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User retrive successfully",
+      data: result,
+    });
+  }
+);
+
+const deleteRequest = catchAsync(async (req: Request, res: Response) => {
+  const token = req.headers.authorization || "";
+  const { requestId } = req.params;
+
+  const result = await RequestServices.deleteRequst(token, requestId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Delete you request successfully!",
+    data: result,
+  });
+});
+
 export const RequestControllers = {
   requestDonorForBlood,
   getMyDonationRequest,
   updateRequestStatus,
   getDonationRequestByMe,
   getAllDonationRequestFromDB,
+  getSingleRequestByMyFromDB,
+  deleteRequest,
 };
