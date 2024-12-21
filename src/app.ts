@@ -9,8 +9,19 @@ const app: Application = express();
 // app.use(cors());
 
 // setting for enable refresh token functionality
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+// app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+
 app.use(cookieParser());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+
+// https://red-dots.vercel.app/
+
+// http://localhost:3000
 
 // parser : help to receive json data
 app.use(express.json());

@@ -1,129 +1,3 @@
-// // This is your Prisma schema file,
-// // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// generator client {
-//   provider = "prisma-client-js"
-// }
-
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DATABASE_URL")
-// }
-
-// model User {
-//   id           String     @id @default(uuid())
-//   name         String
-//   email        String     @unique
-//   password     String
-//   bloodType    String
-//   location     String
-//   role         UserRole
-//   availability Boolean    @default(false)
-//   activeStatus UserStatus @default(ACTIVATE)
-//   isDeleted    Boolean    @default(false)
-//   createdAt    DateTime   @default(now())
-//   updatedAt    DateTime   @updatedAt
-
-//   userProfile UserProfile?
-//   request     Request[]
-
-//   // bloodPost BloodPost[]
-//   donorPosts     BloodPost[] @relation("DonorRequests")
-//   requesterPosts BloodPost[] @relation("RequesterRequests")
-
-//   @@map("users")
-// }
-
-// model UserProfile {
-//   id               String   @id @default(uuid())
-//   userId           String   @unique
-//   bio              String?
-//   age              Int      @default(0)
-//   lastDonationDate String
-//   gender           Gender?
-//   hasAllergies     Boolean? @default(false)
-//   hasDiabetes      Boolean? @default(false)
-//   height           Int      @default(0)
-//   weight           Int      @default(0)
-//   phoneNumber      Int      @default(0)
-//   createdAt        DateTime @default(now())
-//   updatedAt        DateTime @updatedAt
-
-//   user User @relation(fields: [userId], references: [id])
-
-//   @@map("userProfiles")
-// }
-
-// model Request {
-//   id                     String        @id @default(uuid())
-//   donorId                String
-//   requesterId            String
-//   phoneNumber            String
-//   dateOfDonation         String
-//   hospitalName           String
-//   hospitalAddress        String
-//   reason                 String
-//   requestStatus          requestStatus @default(PENDING)
-//   isAccepted             Boolean?      @default(false)
-//   alternativePhoneNumber String?
-//   timeOfDonation         String?
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   donor User @relation(fields: [donorId], references: [id])
-
-//   @@map("requests")
-// }
-
-// model BloodPost {
-//   id                     String        @id @default(uuid())
-//   requesterId            String
-//   donorId                String
-//   numberOfBags           Int           @default(0)
-//   phoneNumber            String
-//   dateOfDonation         String
-//   hospitalName           String
-//   hospitalLocation       String
-//   hospitalAddress        String
-//   reason                 String
-//   requestStatus          requestStatus @default(PENDING)
-//   isManaged             Boolean?      @default(false)
-//   alternativePhoneNumber String?
-//   timeOfDonation         String?
-//   createdAt              DateTime      @default(now())
-//   updatedAt              DateTime      @updatedAt
-
-//   donor     User @relation("DonorRequests", fields: [donorId], references: [id])
-//   requester User @relation("RequesterRequests", fields: [requesterId], references: [id])
-
-//   @@map("bloodPosts")
-// }
-
-// enum requestStatus {
-//   PENDING
-//   APPROVED
-//   REJECTED
-// }
-
-// enum UserRole {
-//   USER
-//   ADMIN
-// }
-
-// enum Gender {
-//   MALE
-//   FEMALE
-// }
-
-// enum UserStatus {
-//   ACTIVATE
-//   DEACTIVATE
-// }
-
 
 
 generator client {
@@ -163,6 +37,8 @@ model UserProfile {
   userId           String   @unique
   bio              String?
   age              Int      @default(0)
+  profileImage     String?
+  profileImageBgRm String?
   lastDonationDate String
   gender           Gender?
   hasAllergies     Boolean? @default(false)
@@ -203,7 +79,7 @@ model Request {
 model BloodPost {
   id                     String        @id @default(uuid())
   requesterId            String
-  // donorId                String
+  bloodType              String       
   numberOfBags           Int           @default(0)
   phoneNumber            String
   dateOfDonation         String

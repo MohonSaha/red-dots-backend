@@ -5,13 +5,15 @@ import { AuthServices } from "./auth.service";
 import httpStatus from "http-status";
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
+  console.log(req.body);
+
   const result = await AuthServices.loginUserIntoDB(req.body);
 
   // Set refresh token to the cookie
   const { refreshToken } = result;
 
   res.cookie("refreshToken", refreshToken, {
-    secure: false, // TODO: Change it true in production
+    secure: true, // TODO: Change it true in production
     httpOnly: true,
   });
 

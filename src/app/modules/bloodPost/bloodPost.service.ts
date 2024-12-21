@@ -29,6 +29,7 @@ const createPostForBlood = async (token: string, payload: any) => {
     hospitalLocation,
     hospitalAddress,
     reason,
+    bloodType,
   } = payload;
 
   // Check if the token is valid or not
@@ -65,6 +66,7 @@ const createPostForBlood = async (token: string, payload: any) => {
     hospitalLocation,
     hospitalAddress,
     reason,
+    bloodType,
   };
 
   const createdPostData = await prisma.bloodPost.create({

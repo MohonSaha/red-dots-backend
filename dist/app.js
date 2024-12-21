@@ -12,8 +12,14 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const app = (0, express_1.default)();
 // app.use(cors());
 // setting for enable refresh token functionality
-app.use((0, cors_1.default)({ origin: "http://localhost:3000", credentials: true }));
+// app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use((0, cookie_parser_1.default)());
+app.use((0, cors_1.default)({
+    origin: "https://red-dots.vercel.app",
+    credentials: true,
+}));
+// https://red-dots.vercel.app/
+// http://localhost:3000
 // parser : help to receive json data
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));

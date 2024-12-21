@@ -8,6 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -18,6 +29,7 @@ const jwtHelper_1 = require("../../../helpers/jwtHelper");
 const ApiError_1 = __importDefault(require("../../errors/ApiError"));
 const http_status_1 = __importDefault(require("http-status"));
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
+const paginationHelper_1 = require("../../../helpers/paginationHelper");
 /*
  ** Request Donor For Blood,
  ** Get My Donation Request,
@@ -102,6 +114,7 @@ const getMyDonationRequestFromDB = (token) => __awaiter(void 0, void 0, void 0, 
             requesterId: {
                 not: userData.id, // Filter where requesterId is not equal to current user's id
             },
+            // isAccepted: false,
         },
     });
     // Fetch requester data separately
@@ -204,9 +217,135 @@ const updateRequestStatusIntoDB = (token, requestId, payload) => __awaiter(void 
     });
     return updatedData;
 });
+const getAllDonationRequestFromDB = (params, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const { limit, page, skip, sortBy, sortOrder } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const andConditions = [];
+    const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
+    // console.log(searchTerm);
+    if (searchTerm) {
+        andConditions.push({
+            OR: [
+                { phoneNumber: { contains: searchTerm, mode: "insensitive" } },
+                { hospitalName: { contains: searchTerm, mode: "insensitive" } },
+                { hospitalAddress: { contains: searchTerm, mode: "insensitive" } },
+                { reason: { contains: searchTerm, mode: "insensitive" } },
+                { donor: { name: { contains: searchTerm, mode: "insensitive" } } },
+                { donor: { email: { contains: searchTerm, mode: "insensitive" } } },
+                { donor: { bloodType: { contains: searchTerm, mode: "insensitive" } } },
+                { donor: { location: { contains: searchTerm, mode: "insensitive" } } },
+            ],
+        });
+    }
+    //   Implementing Filtering On Specific Fields And Values
+    if (Object.keys(filterData).length > 0) {
+        andConditions.push({
+            AND: Object.keys(filterData).map((key) => ({
+                [key]: {
+                    equals: filterData[key],
+                },
+            })),
+        });
+    }
+    const whereConditions = { AND: andConditions };
+    // Step 1: Fetch all donation requests
+    const requests = yield prisma_1.default.request.findMany({
+        where: whereConditions,
+        include: {
+            donor: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    bloodType: true,
+                    location: true,
+                    availability: true,
+                    activeStatus: true,
+                    isDeleted: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            },
+        },
+        skip,
+        take: limit,
+        orderBy: options.sortBy && options.sortOrder
+            ? {
+                [sortBy]: sortOrder,
+            }
+            : { createdAt: "desc" },
+    });
+    // Step 2: Fetch requesters based on requesterId from the user table without the password field
+    const requestsWithRequesters = yield Promise.all(requests.map((request) => __awaiter(void 0, void 0, void 0, function* () {
+        const requester = yield prisma_1.default.user.findUnique({
+            where: { id: request.requesterId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                bloodType: true,
+                location: true,
+                availability: true,
+                activeStatus: true,
+                isDeleted: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
+        return Object.assign(Object.assign({}, request), { requester });
+    })));
+    // Fetch the total count of matching records for pagination
+    const total = yield prisma_1.default.request.count({
+        where: whereConditions,
+    });
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: requestsWithRequesters,
+    };
+});
+const getSingleRequestByMyFromDB = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield prisma_1.default.request.findUnique({
+        where: {
+            id,
+        },
+    });
+    return result;
+});
+const deleteRequst = (token, requestId) => __awaiter(void 0, void 0, void 0, function* () {
+    // Check if the token is valid or not
+    const isTokenValid = jwtHelper_1.jwtHelpers.verifyToken(token, config_1.default.JWT_ACCESS_SECRET);
+    if (!isTokenValid) {
+        throw new ApiError_1.default(http_status_1.default.FORBIDDEN, "FORBIDDEN");
+    }
+    // Check if the donor is available in the database
+    const requesterData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: isTokenValid.email,
+        },
+    });
+    if (!requesterData) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "User not found! Please try again..");
+    }
+    const deleteRequest = yield prisma_1.default.request.deleteMany({
+        where: {
+            id: requestId,
+            requesterId: requesterData.id,
+        },
+    });
+    if (deleteRequest.count === 0) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "No request found!");
+    }
+    return deleteRequest;
+});
 exports.RequestServices = {
     requestDonorForBloodIntoDB,
     getMyDonationRequestFromDB,
     updateRequestStatusIntoDB,
     getDonationRequestByMe,
+    getAllDonationRequestFromDB,
+    getSingleRequestByMyFromDB,
+    deleteRequst,
 };

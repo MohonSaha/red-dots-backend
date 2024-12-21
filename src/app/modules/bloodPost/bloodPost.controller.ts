@@ -6,8 +6,20 @@ import { PostServices } from "./bloodPost.service";
 import pick from "../../../shared/pick";
 import { postFilterableFilds } from "./bloodPost.constant";
 
+/*
+ ** Create a blood post
+ ** Get all blood post from db
+ ** Accept blood post by donor
+ ** Delete accepted blood post
+ ** Get single blood post
+ ** Get my accepted post (Me => Donor)
+ ** Get my posts (Me => Requester)
+ */
+
 const createPostForBlood = catchAsync(async (req: Request, res: Response) => {
   const token = req.headers.authorization || "";
+
+  console.log(req.body);
 
   const result = await PostServices.createPostForBlood(token, req.body);
 

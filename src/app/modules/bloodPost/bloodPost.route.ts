@@ -4,7 +4,13 @@ import { PostControllers } from "./bloodPost.controller";
 const router = express.Router();
 
 /*
- **
+ ** Create a blood post
+ ** Get all blood post from db
+ ** Accept blood post by donor
+ ** Delete accepted blood post
+ ** Get single blood post
+ ** Get my accepted post (Me => Donor)
+ ** Get my posts (Me => Requester)
  */
 
 router.post("/create-blood-post", PostControllers.createPostForBlood);

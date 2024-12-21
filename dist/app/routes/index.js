@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const user_route_1 = require("../modules/user/user.route");
 const auth_route_1 = require("../modules/auth/auth.route");
 const request_route_1 = require("../modules/request/request.route");
+const bloodPost_route_1 = require("../modules/bloodPost/bloodPost.route");
 const router = express_1.default.Router();
 const moduleRoutes = [
     {
@@ -20,6 +21,10 @@ const moduleRoutes = [
     {
         path: "/",
         route: request_route_1.RequestRoutes,
+    },
+    {
+        path: "/",
+        route: bloodPost_route_1.PostRoutes,
     },
 ];
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

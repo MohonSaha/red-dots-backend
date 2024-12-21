@@ -21,6 +21,10 @@ const ApiError_1 = __importDefault(require("../../errors/ApiError"));
 const http_status_1 = __importDefault(require("http-status"));
 const client_1 = require("@prisma/client");
 const loginUserIntoDB = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!payload.email) {
+        console.log("requires email error");
+        throw new Error("Email is required");
+    }
     // check: if the user available
     const userData = yield prisma_1.default.user.findUnique({
         where: {

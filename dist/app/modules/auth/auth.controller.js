@@ -18,11 +18,12 @@ const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const auth_service_1 = require("./auth.service");
 const http_status_1 = __importDefault(require("http-status"));
 const loginUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.body);
     const result = yield auth_service_1.AuthServices.loginUserIntoDB(req.body);
     // Set refresh token to the cookie
     const { refreshToken } = result;
     res.cookie("refreshToken", refreshToken, {
-        secure: false, // TODO: Change it true in production
+        secure: true, // TODO: Change it true in production
         httpOnly: true,
     });
     const responseData = {

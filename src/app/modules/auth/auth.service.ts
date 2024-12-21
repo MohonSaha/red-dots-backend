@@ -11,6 +11,11 @@ const loginUserIntoDB = async (payload: {
   email: string;
   password: string;
 }) => {
+  if (!payload.email) {
+    console.log("requires email error");
+    throw new Error("Email is required");
+  }
+
   // check: if the user available
   const userData = await prisma.user.findUnique({
     where: {

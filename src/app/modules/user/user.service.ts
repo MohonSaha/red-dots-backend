@@ -42,6 +42,7 @@ const createUserIntoDB = async (data: any) => {
       data: {
         bio: (data.bio as string) || "",
         age: data.age as number,
+        profileImage: data.profileImage as string,
         lastDonationDate: data.lastDonationDate as string,
         userId: createdUserData.id as string,
       },
@@ -92,6 +93,7 @@ const getMyProfileFromDB = async (token: string) => {
           userId: true,
           bio: true,
           age: true,
+          profileImage: true,
           lastDonationDate: true,
           height: true,
           weight: true,
@@ -237,6 +239,7 @@ const getAllDonors = async (
           userId: true,
           bio: true,
           age: true,
+          profileImage: true,
           lastDonationDate: true,
           createdAt: true,
           updatedAt: true,
